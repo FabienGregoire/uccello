@@ -63,8 +63,6 @@ class Image extends File implements Uitype
      */
     public function getFormattedValueToSave(Request $request, Field $field, $value, $record = null, ?Domain $domain = null, ?Module $module = null) : ?string
     {
-        //TODO: Delete old file
-
         // Update file
         if ($request->file($field->name)) {
 
@@ -72,14 +70,16 @@ class Image extends File implements Uitype
             $fieldData = $field->data;
 
             // Make directory path
-            $directoryPath = 'public/'; // Public
-            $directoryPath .= isset($domain) ? $domain->slug.'/' : ''; // Domain
+            $directoryPath = isset($domain) ? $domain->slug.'/' : ''; // Domain
             $directoryPath .= isset($fieldData->path) ? trim($fieldData->path, '/') : ''; // Custom directory
 
             // Save file
-            $path = Storage::putFile($directoryPath, $request->file($field->name));
+            $path = Storage::disk('public')->putFile($directoryPath, $request->file($field->name));
             $value = $path;
 
+            if ($record && $record->{$field->column}) {//Delete old file
+                Storage::disk('public')->delete($record->{$field->column});
+            }
         }
         // Delete file
         elseif ($request->input('delete-'.$field->name)) {
